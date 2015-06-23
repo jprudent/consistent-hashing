@@ -62,3 +62,5 @@
                                      (add-node node))]
                          (= (find-node chr data) (find-node (-> (remove-node chr node)
                                                                 (add-node node)) data)))))
+
+;; TODO "should not change more than 75% of keys" "should distribute keys evenly accross servers"  https://github.com/afirel/consistent_hashr/blob/master/spec/consistent_hashr_spec.rb

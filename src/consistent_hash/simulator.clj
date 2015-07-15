@@ -1,7 +1,7 @@
 (ns consistent-hash.simulator
-  (:require [clojure.core.async :refer [chan pub sub >!! go go-loop <! >! timeout close!]]))
+  (:require [clojure.core.async :refer [chan pub sub >!! go go-loop <! >! timeout close! dropping-buffer alt!]]))
 
-(def request-channel (chan 100))
+(def request-channel (chan (dropping-buffer 100)))
 (def response-channel (chan 100))
 (def pub-response-channel (pub response-channel :transaction-id))
 (def transaction-id (atom 0))
@@ -21,8 +21,12 @@
   (let [transaction-id (make-transation-id)
         response-channel (subscribe pub-response-channel transaction-id)]
     (>!! request-channel (->Request url transaction-id))
-    (go (println (<! response-channel))
-        (close! response-channel))))
+    (go
+      (let [response (alt!
+                       (timeout 2000) :timed-out
+                       response-channel ([response] response))]
+        (println response))
+      (close! response-channel))))
 
 (defn server []
   (go-loop [{:keys [transaction-id url]} (<! request-channel)]
